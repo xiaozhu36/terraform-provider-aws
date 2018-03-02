@@ -35,15 +35,6 @@ func resourceAwsDynamoDbTable() *schema.Resource {
 			func(diff *schema.ResourceDiff, v interface{}) error {
 				return validateDynamoDbStreamSpec(diff)
 			},
-			func(diff *schema.ResourceDiff, v interface{}) error {
-				if diff.HasChange("server_side_encryption") {
-					o, n := diff.GetChange("server_side_encryption")
-					if isDynamoDbTableSSEDisabled(o) && isDynamoDbTableSSEDisabled(n) {
-						return diff.Clear("server_side_encryption")
-					}
-				}
-				return nil
-			},
 		),
 
 		SchemaVersion: 1,
@@ -217,7 +208,8 @@ func resourceAwsDynamoDbTable() *schema.Resource {
 					Schema: map[string]*schema.Schema{
 						"enabled": {
 							Type:     schema.TypeBool,
-							Required: true,
+							Optional: true,
+							Default:  false,
 							ForceNew: true,
 						},
 					},
@@ -706,13 +698,4 @@ func waitForDynamoDbTtlUpdateToBeCompleted(tableName string, toEnable bool, conn
 
 	_, err := stateConf.WaitForState()
 	return err
-}
-
-func isDynamoDbTableSSEDisabled(v interface{}) bool {
-	options := v.([]interface{})
-	if len(options) == 0 {
-		return true
-	}
-	e := options[0].(map[string]interface{})["enabled"]
-	return !e.(bool)
 }
